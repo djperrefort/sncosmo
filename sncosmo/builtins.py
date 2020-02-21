@@ -6,32 +6,25 @@
 - MagSystems
 """
 
-import string
-import tarfile
-import warnings
 import os
+import warnings
 from os.path import join
-import codecs
-from collections import OrderedDict
 
 import numpy as np
-from astropy import wcs, units as u
-from astropy.io import ascii, fits
-from astropy.config import ConfigItem, get_cache_dir
+from astropy import units as u, wcs
+from astropy.config import get_cache_dir
+from astropy.io import fits
 from astropy.utils.data import get_pkg_data_filename
 
+from . import conf
 from . import io
 from . import snfitio
-from .utils import download_file, download_dir, DataMirror
-from .models import (Source, TimeSeriesSource, SALT2Source, MLCS2k2Source,
-                     SNEMOSource, _SOURCES)
-from .bandpasses import (Bandpass, read_bandpass, _BANDPASSES,
-                         _BANDPASS_INTERPOLATORS)
-from .spectrum import Spectrum
-from .magsystems import (MagSystem, SpectralMagSystem, ABMagSystem,
-                         CompositeMagSystem, _MAGSYSTEMS)
-from . import conf
+from .bandpasses import (Bandpass, _BANDPASSES, _BANDPASS_INTERPOLATORS, read_bandpass)
 from .constants import BANDPASS_TRIM_LEVEL
+from .magsystems import (ABMagSystem, CompositeMagSystem, SpectralMagSystem, _MAGSYSTEMS)
+from .models import (MLCS2k2Source, SALT2Source, SNEMOSource, TimeSeriesSource, _SOURCES)
+from .spectrum import Spectrum
+from .utils import DataMirror
 
 # This module is only imported for its side effects.
 __all__ = []
@@ -153,24 +146,51 @@ for name, fname in [('desg', 'bandpasses/des/des_g.dat'),
 
 sdss_meta = {
     'filterset': 'sdss',
-    'reference': ('D10', '`Doi et al. 2010 <http://adsabs.harvard.edu/'
-                  'abs/2010AJ....139.1628D>`__, Table 4'),
-    'description': ('SDSS 2.5m imager at airmass 1.3 (including '
-                    'atmosphere), normalized')}
+    'reference': ('D10', '`Doi et al. 2010 <http://adsabs.harvard.edu/abs/2010AJ....139.1628D>`__, Table 4'),
+    'description': ('SDSS 2.5m imager at airmass 1.3 (including atmosphere), normalized and column specific')}
 for name, fname in [('sdssu', 'bandpasses/sdss/sdss_u.dat'),
+                    ('sdssu1', 'bandpasses/sdss/sdss_u1.dat'),
+                    ('sdssu2', 'bandpasses/sdss/sdss_u2.dat'),
+                    ('sdssu3', 'bandpasses/sdss/sdss_u3.dat'),
+                    ('sdssu4', 'bandpasses/sdss/sdss_u4.dat'),
+                    ('sdssu5', 'bandpasses/sdss/sdss_u5.dat'),
+                    ('sdssu6', 'bandpasses/sdss/sdss_u6.dat'),
                     ('sdssg', 'bandpasses/sdss/sdss_g.dat'),
+                    ('sdssg1', 'bandpasses/sdss/sdss_g1.dat'),
+                    ('sdssg2', 'bandpasses/sdss/sdss_g2.dat'),
+                    ('sdssg3', 'bandpasses/sdss/sdss_g3.dat'),
+                    ('sdssg4', 'bandpasses/sdss/sdss_g4.dat'),
+                    ('sdssg5', 'bandpasses/sdss/sdss_g5.dat'),
+                    ('sdssg6', 'bandpasses/sdss/sdss_g6.dat'),
                     ('sdssr', 'bandpasses/sdss/sdss_r.dat'),
+                    ('sdssr1', 'bandpasses/sdss/sdss_r1.dat'),
+                    ('sdssr2', 'bandpasses/sdss/sdss_r2.dat'),
+                    ('sdssr3', 'bandpasses/sdss/sdss_r3.dat'),
+                    ('sdssr4', 'bandpasses/sdss/sdss_r4.dat'),
+                    ('sdssr5', 'bandpasses/sdss/sdss_r5.dat'),
+                    ('sdssr6', 'bandpasses/sdss/sdss_r6.dat'),
                     ('sdssi', 'bandpasses/sdss/sdss_i.dat'),
-                    ('sdssz', 'bandpasses/sdss/sdss_z.dat')]:
-    _BANDPASSES.register_loader(name, load_bandpass_remote_aa,
-                                args=(fname,),
-                                meta=sdss_meta)
+                    ('sdssi1', 'bandpasses/sdss/sdss_i1.dat'),
+                    ('sdssi2', 'bandpasses/sdss/sdss_i2.dat'),
+                    ('sdssi3', 'bandpasses/sdss/sdss_i3.dat'),
+                    ('sdssi4', 'bandpasses/sdss/sdss_i4.dat'),
+                    ('sdssi5', 'bandpasses/sdss/sdss_i5.dat'),
+                    ('sdssi6', 'bandpasses/sdss/sdss_i6.dat'),
+                    ('sdssz', 'bandpasses/sdss/sdss_z.dat'),
+                    ('sdssz1', 'bandpasses/sdss/sdss_z1.dat'),
+                    ('sdssz2', 'bandpasses/sdss/sdss_z2.dat'),
+                    ('sdssz3', 'bandpasses/sdss/sdss_z3.dat'),
+                    ('sdssz4', 'bandpasses/sdss/sdss_z4.dat'),
+                    ('sdssz5', 'bandpasses/sdss/sdss_z5.dat'),
+                    ('sdssz6', 'bandpasses/sdss/sdss_z6.dat')]:
 
-_BANDPASSES.alias('sdss::u', 'sdssu')
-_BANDPASSES.alias('sdss::g', 'sdssg')
-_BANDPASSES.alias('sdss::r', 'sdssr')
-_BANDPASSES.alias('sdss::i', 'sdssi')
-_BANDPASSES.alias('sdss::z', 'sdssz')
+    _BANDPASSES.register_loader(
+        name, load_bandpass_remote_aa, args=(fname,), meta=sdss_meta)
+
+for band_letter in 'ugriz':
+    _BANDPASSES.alias(f'sdss::{band_letter}', f'sdss{band_letter}')
+    for i in range(1, 7):
+        _BANDPASSES.alias(f'sdss::{band_letter}{i}', f'sdss{band_letter}{i}')
 
 
 # HST ACS WFC bandpasses: remote
